@@ -1,0 +1,34 @@
+# Llama 3.2 3B - TurboQuant Configuration
+# Fits entirely in RTX 3050 4GB VRAM with INT2
+
+model:
+  name: llama-3.2-3b
+  params: 3.2e9
+  layers: 26
+  hidden_dim: 3200
+  heads: 32
+  head_dim: 100
+  vocab_size: 128256
+
+quantization:
+  method: turboquant
+  bits: 2
+  group_size: 128
+  kv_cache_bits: 2
+  residual_iterations: 3
+
+offload:
+  gpu_layers: 26      # All layers on GPU
+  cpu_layers: 0
+  vram_usage_mb: 850   # Estimated with TQ2
+  ram_usage_mb: 200    # Embeddings + overhead
+
+inference:
+  max_context: 4096
+  batch_size: 1
+  threads: 12          # i5-11400H threads
+  gpu_device: 0
+
+performance:
+  expected_tps: 65     # tokens/second
+  prompt_eval_tps: 120 # prompt processing

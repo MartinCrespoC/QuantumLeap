@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  turboquant-api:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/Dockerfile.turboquant
+    container_name: turboquant-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - models:/app/models
+      - ${HOME}/.cache/turboquant:/root/.cache/turboquant
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - OMP_NUM_THREADS=12
+    restart: unless-stopped
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: turboquant-webui
+    ports:
+      - "3000:8080"
+    volumes:
+      - webui-data:/app/backend/data
+    environment:
+      - OLLAMA_BASE_URL=http://turboquant-api:8000
+    depends_on:
+      - turboquant-api
+    restart: unless-stopped
+
+volumes:
+  models:
+  webui-data:

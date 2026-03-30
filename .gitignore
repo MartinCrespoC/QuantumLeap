@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Models (too large for git)
+models/*.gguf
+models/*.bin
+!models/.gitkeep
+
+# Benchmarks
+benchmarks/*.json
+benchmarks/*.txt
+!benchmarks/.gitkeep
+
+# Backups
+backups/*.bak
+backups/*.py
+!backups/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+engine/llama.cpp/build/
+engine/llama.cpp/models/
+*.o
+*.a
+
+# Temporary files
+tmp/
+temp/
+*.tmp

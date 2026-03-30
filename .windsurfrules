@@ -1,0 +1,45 @@
+# LLM TurboQuant Development Rules
+
+## Project Overview
+TurboQuant: Extreme quantization (1-2 bit) for LLM inference on NVIDIA RTX 3050 (4GB VRAM) + 24GB RAM.
+Target: Intel i5-11400H (AVX-512), CUDA Compute 8.6.
+
+## Code Style
+- C++: C++20, Google Style Guide, clang-format enforced
+- Assembly: Intel syntax (.intel_syntax noprefix), every instruction commented
+- CUDA: Compute Capability 8.6, shared memory preferred over global
+- Python: PEP 8, type hints mandatory, black formatter, 100 char line length
+
+## Performance Requirements
+- All hot paths profiled with `perf` or `nvprof` before merge
+- SIMD intrinsics required for vector ops (AVX-512: `_mm512_*`)
+- Assembly only for critical paths consuming >10% total runtime
+- CUDA kernels must achieve >70% occupancy
+- Memory bandwidth utilization >60% for data-bound kernels
+
+## Architecture
+- `core/` = C++/CUDA/Assembly (zero Python dependencies)
+- `python/` = Python bindings via pybind11 (depends on core)
+- `deployment/` = API servers, Web UI, Docker (depends on python)
+
+## Testing
+- Unit tests for all quantization functions (accuracy < 1% degradation vs FP16)
+- Benchmark tests: minimum 1.5x speedup vs Q4_K_M baseline
+- Integration tests with llama.cpp GGML backend
+- Memory leak checks: Valgrind + CUDA memcheck clean
+
+## Memory Safety
+- No raw pointers in public C++ APIs (use std::unique_ptr, std::span)
+- RAII for all GPU memory allocations
+- Bounds checking in debug builds (#ifndef NDEBUG)
+
+## Build System
+- CMake 3.20+ with Ninja generator
+- ccache enabled for faster rebuilds
+- Separate build configs: Debug, Release, Profile
+- MAKEFLAGS=-j12 (12 hardware threads)
+
+## Git Workflow
+- Feature branches: `feature/turboquant-polar`, `feature/cuda-int2`
+- Conventional commits: `feat:`, `fix:`, `perf:`, `test:`, `docs:`
+- Benchmarks required in PR description for performance changes

@@ -1,0 +1,22 @@
+# Production deployment configuration
+server:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 1
+  reload: false
+  log_level: "warning"
+
+model:
+  default: "mistral-7b"
+  quantization: "turboquant-int2"
+  max_context: 4096
+
+gpu:
+  device: 0
+  memory_fraction: 0.90
+  enable_profiling: false
+
+monitoring:
+  enabled: true
+  prometheus_port: 9090
+  grafana_port: 3001

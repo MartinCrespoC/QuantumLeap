@@ -1,0 +1,34 @@
+# Qwen 72B - TurboQuant Configuration
+# Requires GPU+CPU offloading (too large for 4GB VRAM)
+
+model:
+  name: qwen-2.5-72b
+  params: 72.7e9
+  layers: 80
+  hidden_dim: 8192
+  heads: 64
+  head_dim: 128
+  vocab_size: 151936
+
+quantization:
+  method: turboquant
+  bits: 2
+  group_size: 128
+  kv_cache_bits: 2
+  residual_iterations: 3
+
+offload:
+  gpu_layers: 15       # ~15 layers fit in VRAM with TQ2
+  cpu_layers: 65       # Remaining on CPU RAM
+  vram_usage_mb: 3500  # Max VRAM budget
+  ram_usage_mb: 16000  # ~16GB RAM for remaining layers
+
+inference:
+  max_context: 2048    # Reduced context for memory
+  batch_size: 1
+  threads: 12
+
+performance:
+  expected_tps: 5      # Slow due to CPU-GPU transfers
+  prompt_eval_tps: 12
+  note: "Best for quality, not speed. Use 7B-13B for interactive use."

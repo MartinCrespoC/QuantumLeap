@@ -1,0 +1,94 @@
+{
+  "folders": [
+    {
+      "path": "deployment",
+      "name": "Deployment & Ops"
+    }
+  ],
+  "settings": {
+    "files.associations": {
+      "*.yaml": "yaml",
+      "*.yml": "yaml",
+      "Dockerfile*": "dockerfile",
+      "*.sh": "shellscript"
+    },
+    "yaml.format.enable": true,
+    "yaml.validate": true,
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.minimap.enabled": false,
+    "editor.bracketPairColorization.enabled": true,
+    "editor.inlineSuggest.enabled": true,
+    "terminal.integrated.gpuAcceleration": "on",
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "shellcheck.enable": true,
+    "[shellscript]": {
+      "editor.tabSize": 4,
+      "editor.defaultFormatter": "mkhl.shfmt"
+    },
+    "[python]": {
+      "editor.tabSize": 4,
+      "editor.defaultFormatter": "ms-python.black-formatter"
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-azuretools.vscode-docker",
+      "redhat.vscode-yaml",
+      "timonwong.shellcheck",
+      "mkhl.shfmt",
+      "ms-python.python",
+      "ms-python.black-formatter"
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Start API Server",
+        "type": "shell",
+        "command": "bash scripts/launch_model.sh --api",
+        "group": "build",
+        "isBackground": true
+      },
+      {
+        "label": "Start WebUI",
+        "type": "shell",
+        "command": "bash scripts/launch_model.sh --webui",
+        "isBackground": true
+      },
+      {
+        "label": "Run Benchmarks",
+        "type": "shell",
+        "command": "bash scripts/benchmark.sh --all"
+      },
+      {
+        "label": "Docker Build",
+        "type": "shell",
+        "command": "docker compose -f docker/docker-compose.yml build"
+      },
+      {
+        "label": "Docker Up",
+        "type": "shell",
+        "command": "docker compose -f docker/docker-compose.yml up -d",
+        "isBackground": true
+      },
+      {
+        "label": "Docker Down",
+        "type": "shell",
+        "command": "docker compose -f docker/docker-compose.yml down"
+      },
+      {
+        "label": "System Optimize",
+        "type": "shell",
+        "command": "sudo bash scripts/optimize_system.sh"
+      },
+      {
+        "label": "Health Check",
+        "type": "shell",
+        "command": "curl -s http://localhost:8000/health | python3 -m json.tool"
+      }
+    ]
+  }
+}

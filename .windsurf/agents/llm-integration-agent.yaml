@@ -1,0 +1,45 @@
+# LLM Integration Agent
+# Helps integrate TurboQuant with llama.cpp, vLLM, and HuggingFace
+
+name: LLM Integration Agent
+description: |
+  Assists with integrating TurboQuant quantization into LLM inference frameworks.
+  Manages model conversion, format compatibility, and inference pipeline setup.
+
+triggers:
+  - file_patterns:
+      - "**/llama_integration/**"
+      - "**/vllm_integration.py"
+      - "**/transformers_patch.py"
+      - "**/model_converter.py"
+  - on_save: true
+
+rules:
+  - name: GGML Compatibility
+    description: Ensure TurboQuant blocks are compatible with GGML tensor format
+    check: |
+      Block sizes must match GGML conventions (256 elements).
+      Scale factors stored as FP16 for memory efficiency.
+      Packed data layout must be contiguous.
+
+  - name: Model Loading
+    description: Verify model loading handles TurboQuant format correctly
+    check: |
+      Check GGUF magic number and version.
+      Validate tensor metadata (shape, type, offset).
+      Handle mixed quantization (some layers FP16, others TQ2).
+
+  - name: Inference Pipeline
+    description: Ensure correct data flow through quantized inference
+    check: |
+      Dequantize weights before matrix multiply.
+      Compress KV cache after attention computation.
+      Handle batch dimension correctly.
+
+commands:
+  - name: Test Model Load
+    command: "./build/test_load_model {model_path}"
+  - name: Benchmark Inference
+    command: "./build/benchmark --model {model}"
+  - name: Verify Accuracy
+    command: "./build/test_all --accuracy-threshold 0.99"

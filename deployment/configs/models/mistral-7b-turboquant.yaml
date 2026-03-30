@@ -1,0 +1,33 @@
+# Mistral 7B - TurboQuant Configuration
+# Fits in RTX 3050 4GB VRAM with INT2
+
+model:
+  name: mistral-7b-v0.3
+  params: 7.3e9
+  layers: 32
+  hidden_dim: 4096
+  heads: 32
+  head_dim: 128
+  vocab_size: 32768
+
+quantization:
+  method: turboquant
+  bits: 2
+  group_size: 128
+  kv_cache_bits: 2
+  residual_iterations: 3
+
+offload:
+  gpu_layers: 32      # All layers on GPU with TQ2
+  cpu_layers: 0
+  vram_usage_mb: 2300  # Estimated with TQ2
+  ram_usage_mb: 500    # Embeddings + overhead
+
+inference:
+  max_context: 4096
+  batch_size: 1
+  threads: 12
+
+performance:
+  expected_tps: 42     # tokens/second with TQ2
+  prompt_eval_tps: 85

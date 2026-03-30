@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TurboQuant</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Navigation -->
+    <nav id="nav">
+      <div class="nav-brand">
+        <span class="nav-logo">⚡</span>
+        <span class="nav-title">TurboQuant</span>
+        <span class="nav-version">v0.2</span>
+      </div>
+      <div class="nav-tabs">
+        <button class="nav-tab active" data-tab="chat">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Chat
+        </button>
+        <button class="nav-tab" data-tab="models">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+          Models
+        </button>
+        <button class="nav-tab" data-tab="bench">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+          Benchmark
+        </button>
+        <button class="nav-tab" data-tab="help">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Help
+        </button>
+      </div>
+      <div class="nav-status">
+        <span id="nav-engine" class="status-dot offline" title="Engine status"></span>
+        <span id="nav-gpu-label">GPU</span>
+        <span id="nav-gpu-bar"><span id="nav-gpu-fill"></span></span>
+      </div>
+    </nav>
+
+    <!-- ════════════════════════ CHAT TAB ════════════════════════ -->
+    <div id="tab-chat" class="tab-content active">
+      <aside id="sidebar">
+        <button id="new-chat-btn" class="btn-primary-sm">+ New Chat</button>
+        <div class="sidebar-section">
+          <label class="label-sm">Model</label>
+          <select id="chat-model-select"></select>
+        </div>
+        <div id="conversations-list"></div>
+      </aside>
+      <main id="chat-main">
+        <div id="messages"></div>
+        <div id="welcome" class="welcome-screen">
+          <div class="welcome-icon">⚡</div>
+          <h2>TurboQuant</h2>
+          <p>Local LLM inference with extreme compression</p>
+          <div class="welcome-cards">
+            <div class="wcard"><strong>Ollama API</strong><span>VSCode, Windsurf, Antigravity</span></div>
+            <div class="wcard"><strong>TurboQuant</strong><span>4.9x KV cache compression</span></div>
+            <div class="wcard"><strong>CUDA + AVX-512</strong><span>GPU & CPU optimized</span></div>
+          </div>
+        </div>
+        <div id="input-area">
+          <div class="input-box">
+            <textarea id="msg-input" rows="1" placeholder="Send a message..." autofocus></textarea>
+            <button id="send-btn" class="btn-icon accent" title="Send">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+            <button id="stop-btn" class="btn-icon danger hidden" title="Stop">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+            </button>
+          </div>
+          <div class="input-meta">
+            <span id="token-info"></span>
+            <span>localhost:11434</span>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- ════════════════════════ MODELS TAB ════════════════════════ -->
+    <div id="tab-models" class="tab-content">
+      <div class="page-container">
+        <div class="page-header">
+          <h2>Model Manager</h2>
+          <div class="page-actions">
+            <button id="refresh-models-btn" class="btn-sm">Refresh</button>
+          </div>
+        </div>
+
+        <!-- Hardware Compatibility -->
+        <div class="section-card">
+          <div class="section-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Hardware Compatibility
+          </div>
+          <div id="hw-compat-summary" class="hw-compat-summary">
+            <div class="empty-state">Detecting hardware...</div>
+          </div>
+          <div id="hw-compat-table-wrap" class="hidden">
+            <div id="hw-compat-table" class="hw-compat-table"></div>
+          </div>
+          <button id="toggle-compat-table" class="btn-sm" style="margin-top:0.5rem">Show Detailed Table</button>
+        </div>
+
+        <!-- Local Models -->
+        <div class="section-card">
+          <div class="section-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+            Local Models
+          </div>
+          <div id="local-models-grid" class="models-grid">
+            <div class="empty-state">No models found. Download one below.</div>
+          </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="section-card">
+          <div class="section-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+            Engine Settings
+          </div>
+          <div class="settings-row">
+            <div class="setting">
+              <label>GPU Layers</label>
+              <input type="number" id="setting-gpu-layers" value="99" min="0" max="200">
+              <span class="setting-hint">99 = all layers on GPU</span>
+            </div>
+            <div class="setting">
+              <label>Context Size</label>
+              <input type="number" id="setting-ctx-size" value="4096" min="512" max="131072" step="512">
+              <span class="setting-hint">Tokens of context window</span>
+            </div>
+            <button id="save-settings-btn" class="btn-sm accent">Save Settings</button>
+          </div>
+        </div>
+
+        <!-- Requantization -->
+        <div class="section-card">
+          <div class="section-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Requantize Model
+          </div>
+          <div class="requant-form">
+            <div class="requant-row">
+              <div class="setting">
+                <label>Source Model</label>
+                <select id="requant-source"></select>
+              </div>
+              <div class="setting">
+                <label>Target Quantization</label>
+                <select id="requant-target"></select>
+              </div>
+              <button id="requant-btn" class="btn-sm accent">Requantize</button>
+            </div>
+            <div id="requant-quality-info" class="requant-quality-info"></div>
+            <div id="requant-progress-wrap" class="hidden">
+              <div class="requant-progress">
+                <div class="requant-progress-bar"><div id="requant-fill" class="requant-fill"></div></div>
+                <span id="requant-pct" class="requant-pct">0%</span>
+                <span id="requant-status" class="requant-status">Starting...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Download Models -->
+        <div class="section-card">
+          <div class="section-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download Models
+          </div>
+          <div class="search-bar">
+            <input type="text" id="hf-search" placeholder="Search HuggingFace for GGUF models..." autocomplete="off">
+            <button id="hf-search-btn" class="btn-sm">Search</button>
+            <button id="hf-smart-search-btn" class="btn-sm accent" title="Find models optimized for your hardware">Smart Search</button>
+          </div>
+          <div id="hf-results" class="hf-results"></div>
+          <div id="hf-files-panel" class="hf-files-panel hidden"></div>
+        </div>
+
+        <!-- Active Downloads & Quantizations -->
+        <div id="downloads-section" class="section-card hidden">
+          <div class="section-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+            Active Downloads &amp; Tasks
+          </div>
+          <div id="downloads-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════ BENCHMARK TAB ════════════════════════ -->
+    <div id="tab-bench" class="tab-content">
+      <div class="page-container">
+        <div class="page-header">
+          <h2>Benchmark & Testing</h2>
+          <div class="page-actions">
+            <button id="run-bench-btn" class="btn-sm accent">Run Benchmark</button>
+            <button id="clear-bench-btn" class="btn-sm danger">Clear History</button>
+          </div>
+        </div>
+
+        <!-- Bench Config -->
+        <div class="section-card">
+          <div class="section-title">Configure Test</div>
+          <div class="bench-config">
+            <div class="setting">
+              <label>Model</label>
+              <select id="bench-model-select"></select>
+            </div>
+            <div class="setting">
+              <label>Prompt</label>
+              <textarea id="bench-prompt" rows="2">Explain quantum computing in simple terms.</textarea>
+            </div>
+            <div class="settings-row">
+              <div class="setting">
+                <label>Max Tokens</label>
+                <input type="number" id="bench-max-tokens" value="128" min="16" max="2048">
+              </div>
+              <div class="setting">
+                <label>Runs</label>
+                <input type="number" id="bench-runs" value="3" min="1" max="10">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Result -->
+        <div id="bench-live" class="section-card hidden">
+          <div class="section-title">Latest Result</div>
+          <div id="bench-live-content"></div>
+        </div>
+
+        <!-- History -->
+        <div class="section-card">
+          <div class="section-title">Benchmark History</div>
+          <div id="bench-history"></div>
+        </div>
+
+        <!-- Optimization Tips -->
+        <div class="section-card">
+          <div class="section-title">Optimization Guide</div>
+          <div class="opt-tips">
+            <div class="opt-tip">
+              <strong>Low tokens/s?</strong>
+              <span>Try a smaller quant (Q4_K_S, IQ4_XS) or reduce context size. Ensure all layers are on GPU (gpu_layers=99).</span>
+            </div>
+            <div class="opt-tip">
+              <strong>Out of VRAM?</strong>
+              <span>Reduce gpu_layers (try 20-30 for 7B on 4GB). Use Q2_K or IQ2 quants. Reduce context to 2048.</span>
+            </div>
+            <div class="opt-tip">
+              <strong>TurboQuant KV Cache</strong>
+              <span>Use --cache-type-k tq3 --cache-type-v tq3 for 4.9x KV compression. Fits 5x more context in same VRAM.</span>
+            </div>
+            <div class="opt-tip">
+              <strong>Compare quants</strong>
+              <span>Download same model in Q4_K_M and Q2_K, benchmark both. Quality vs speed tradeoff depends on your use case.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════ HELP TAB ════════════════════════ -->
+    <div id="tab-help" class="tab-content">
+      <div class="page-container">
+        <div class="page-header"><h2>Help & Documentation</h2></div>
+
+        <div class="section-card">
+          <div class="section-title">What is TurboQuant?</div>
+          <div class="help-content">
+            <p><strong>TurboQuant</strong> (Zandieh et al., ICLR 2026) is Google's breakthrough method for compressing LLM KV caches from FP16 to <strong>3 bits per value</strong>, achieving <strong>4.9x compression</strong> with near-zero accuracy loss (MSE 0.034).</p>
+            <h4>How it works</h4>
+            <ol>
+              <li><strong>Random Orthogonal Rotation</strong> — Each KV vector is normalized and rotated by a fixed random orthogonal matrix, making all coordinates follow the same Beta distribution.</li>
+              <li><strong>Lloyd-Max Quantization</strong> — Each rotated coordinate is quantized to 3 bits using an MSE-optimal codebook for that distribution.</li>
+              <li><strong>Bit Packing</strong> — 128 indices packed into 48 bytes (TQ3) or 64 bytes (TQ4), plus 4 bytes for the norm.</li>
+              <li><strong>Dequantization</strong> — Reverse: unpack → codebook lookup → inverse rotation → scale by norm.</li>
+            </ol>
+            <h4>Why it matters</h4>
+            <p>On a <strong>4GB GPU</strong> (RTX 3050), with FP16 KV cache you might fit ~8K context. With TQ3, the same VRAM holds <strong>~40K tokens</strong> — 5x more context for the same memory cost.</p>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-title">Quantization Formats Comparison</div>
+          <div class="help-content">
+            <table class="help-table">
+              <thead><tr><th>Format</th><th>Bits/Weight</th><th>7B Model Size</th><th>Quality</th><th>Speed</th></tr></thead>
+              <tbody>
+                <tr><td>F16</td><td>16</td><td>13.5 GB</td><td>Baseline</td><td>Slow</td></tr>
+                <tr><td>Q8_0</td><td>8.5</td><td>7.2 GB</td><td>~Lossless</td><td>Fast</td></tr>
+                <tr><td>Q6_K</td><td>6.6</td><td>5.5 GB</td><td>Excellent</td><td>Fast</td></tr>
+                <tr class="highlight"><td>Q4_K_M</td><td>4.8</td><td>4.1 GB</td><td>Very good</td><td>Very fast</td></tr>
+                <tr><td>Q4_K_S</td><td>4.6</td><td>3.9 GB</td><td>Good</td><td>Very fast</td></tr>
+                <tr><td>IQ4_XS</td><td>4.3</td><td>3.6 GB</td><td>Good</td><td>Fast</td></tr>
+                <tr><td>Q3_K_M</td><td>3.9</td><td>3.3 GB</td><td>Decent</td><td>Fast</td></tr>
+                <tr><td>Q2_K</td><td>3.4</td><td>2.8 GB</td><td>Acceptable</td><td>Fast</td></tr>
+                <tr class="highlight"><td>IQ2_XXS</td><td>2.1</td><td>1.7 GB</td><td>Reduced</td><td>Medium</td></tr>
+                <tr class="highlight"><td>TQ1_0</td><td>1.7</td><td>1.4 GB</td><td>Reduced</td><td>Medium</td></tr>
+                <tr class="highlight"><td>TQ2_0</td><td>2.1</td><td>1.7 GB</td><td>Better than IQ2</td><td>Fast</td></tr>
+              </tbody>
+            </table>
+            <p class="help-note">TQ1_0 and TQ2_0 are the TurboQuant weight formats from the llama.cpp fork. TQ3/TQ4 refer to KV cache compression.</p>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-title">Optimization Checklist</div>
+          <div class="help-content">
+            <h4>GPU Optimization</h4>
+            <ul>
+              <li>Set <code>gpu_layers = 99</code> to offload all layers to GPU</li>
+              <li>If VRAM is tight, reduce layers until it fits (check GPU memory in status bar)</li>
+              <li>Use <code>Q4_K_M</code> for best quality/size balance on 4GB VRAM</li>
+              <li>Use <code>IQ2_XXS</code> or <code>TQ2_0</code> to fit larger models in limited VRAM</li>
+            </ul>
+            <h4>Context & Memory</h4>
+            <ul>
+              <li>Default context: 4096 tokens. Increase to 8192+ for long conversations</li>
+              <li>KV cache uses ~2MB per 1K tokens at FP16; TQ3 reduces this to ~0.4MB</li>
+              <li>For very long contexts (32K+), TQ3 KV cache compression is essential</li>
+            </ul>
+            <h4>System Tuning</h4>
+            <ul>
+              <li>Linux: <code>echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled</code></li>
+              <li>Set CPU governor to performance: <code>cpupower frequency-set -g performance</code></li>
+              <li>Disable swap or use zswap for better memory performance</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-title">API Reference</div>
+          <div class="help-content">
+            <h4>Ollama-Compatible Endpoints</h4>
+            <table class="help-table compact">
+              <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr><td>GET</td><td><code>/api/tags</code></td><td>List available models</td></tr>
+                <tr><td>POST</td><td><code>/api/chat</code></td><td>Chat completion (streaming)</td></tr>
+                <tr><td>POST</td><td><code>/api/generate</code></td><td>Text generation</td></tr>
+                <tr><td>GET</td><td><code>/api/ps</code></td><td>Running models</td></tr>
+                <tr><td>GET</td><td><code>/api/version</code></td><td>Server version</td></tr>
+              </tbody>
+            </table>
+            <h4>OpenAI-Compatible Endpoints</h4>
+            <table class="help-table compact">
+              <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr><td>POST</td><td><code>/v1/chat/completions</code></td><td>Chat completions</td></tr>
+                <tr><td>GET</td><td><code>/v1/models</code></td><td>Model list</td></tr>
+              </tbody>
+            </table>
+            <h4>Connect from Windsurf / VSCode</h4>
+            <p>Set the Ollama API endpoint to <code>http://localhost:11434</code> in your IDE settings.</p>
+
+            <h4>curl Examples</h4>
+            <pre><code># Chat (streaming)
+curl http://localhost:11434/api/chat -d '{
+  "model": "SmolLM2-1.7B-Instruct-Q4_K_M",
+  "messages": [{"role":"user","content":"Hello!"}]
+}'
+
+# Non-streaming
+curl -X POST http://localhost:11434/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model":"SmolLM2-1.7B-Instruct-Q4_K_M",
+       "messages":[{"role":"user","content":"Hello!"}]}'</code></pre>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-title">Architecture</div>
+          <div class="help-content">
+            <pre><code>┌─────────────────────────────────────────┐
+│              Web UI (:11434)             │
+│   Chat │ Models │ Benchmark │ Help      │
+└────────────────┬────────────────────────┘
+                 │
+┌────────────────▼────────────────────────┐
+│        FastAPI Server (Python)          │
+│  Ollama API  │  OpenAI API  │  Mgmt    │
+└────────────────┬────────────────────────┘
+                 │
+┌────────────────▼────────────────────────┐
+│     llama-server (llama.cpp + CUDA)     │
+│   TurboQuant │ GGML │ Compute 8.6      │
+└────────────────┬────────────────────────┘
+                 │
+┌────────────────▼────────────────────────┐
+│   Hardware: RTX 3050 + i5-11400H + 24GB │
+└─────────────────────────────────────────┘</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

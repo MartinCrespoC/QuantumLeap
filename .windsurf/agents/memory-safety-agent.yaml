@@ -1,0 +1,52 @@
+# Memory Safety Agent
+# Detects memory leaks, buffer overflows, and CUDA memory errors
+
+name: Memory Safety Agent
+description: |
+  Monitors C++ and CUDA code for memory safety issues.
+  Runs sanitizers and static analysis to prevent crashes and data corruption.
+
+triggers:
+  - file_patterns:
+      - "**/*.cpp"
+      - "**/*.cu"
+      - "**/*.h"
+      - "**/*.cuh"
+  - on_build: true
+
+rules:
+  - name: No Raw Pointers in Public API
+    description: Public functions should use smart pointers or spans
+    check: |
+      Scan public function signatures in headers.
+      Flag raw pointer parameters (except const float* for C interop).
+      Suggest std::unique_ptr, std::span, or std::vector.
+
+  - name: RAII for GPU Memory
+    description: All cudaMalloc must have corresponding cudaFree
+    check: |
+      Use CudaUniquePtr wrapper from cuda_utils.cuh.
+      No naked cudaMalloc/cudaFree calls.
+      Check for early returns that skip cleanup.
+
+  - name: Bounds Checking
+    description: Array accesses must be bounds-checked in debug builds
+    check: |
+      Use assert() or #ifndef NDEBUG guards.
+      Check loop bounds against array sizes.
+      Validate indices before pointer arithmetic.
+
+  - name: Null Pointer Checks
+    description: Check pointers before dereferencing
+    check: |
+      Validate function parameters at entry.
+      Check allocation results (malloc, cudaMalloc).
+      Use std::optional for nullable returns.
+
+commands:
+  - name: AddressSanitizer
+    command: "cmake -B build-asan -DENABLE_ASAN=ON && cmake --build build-asan && ./build-asan/test_all"
+  - name: Valgrind
+    command: "valgrind --leak-check=full --show-leak-kinds=all ./build/test_all"
+  - name: CUDA Memcheck
+    command: "cuda-memcheck ./build/benchmark_cuda"

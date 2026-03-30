@@ -1,0 +1,150 @@
+{
+  "folders": [
+    {
+      "path": "core",
+      "name": "TurboQuant Core (C++/CUDA/ASM)"
+    }
+  ],
+  "settings": {
+    "C_Cpp.default.compilerPath": "/usr/bin/g++",
+    "C_Cpp.default.cppStandard": "c++20",
+    "C_Cpp.default.includePath": [
+      "${workspaceFolder}/include",
+      "/usr/local/cuda/include",
+      "/opt/cuda/include"
+    ],
+    "C_Cpp.default.defines": [
+      "AVX512=1",
+      "CUDA_ARCH=86",
+      "__CUDACC__"
+    ],
+    "C_Cpp.clang_format_style": "Google",
+    "C_Cpp.codeAnalysis.runAutomatically": true,
+    "cmake.configureArgs": [
+      "-GNinja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DAVX512=ON",
+      "-DCUDA_ARCH=86"
+    ],
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+    "cmake.generator": "Ninja",
+    "files.associations": {
+      "*.S": "asm-intel-x86-generic",
+      "*.cu": "cuda-cpp",
+      "*.cuh": "cuda-cpp",
+      "*.h": "cpp",
+      "*.hpp": "cpp"
+    },
+    "editor.rulers": [80, 100],
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.detectIndentation": false,
+    "editor.minimap.enabled": false,
+    "editor.bracketPairColorization.enabled": true,
+    "editor.guides.bracketPairs": "active",
+    "editor.inlineSuggest.enabled": true,
+    "terminal.integrated.gpuAcceleration": "on",
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.watcherExclude": {
+      "**/build/**": true,
+      "**/.cache/**": true
+    },
+    "search.exclude": {
+      "**/build": true,
+      "**/.cache": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-vscode.cpptools",
+      "ms-vscode.cmake-tools",
+      "ms-vscode.cpptools-extension-pack",
+      "nvidia.nsight-vscode-edition",
+      "13xforever.language-x86-64-assembly",
+      "jeff-hykin.better-cpp-syntax",
+      "kriegalex.vscode-cudacpp",
+      "vadimcn.vscode-lldb"
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Build TurboQuant (Release)",
+        "type": "shell",
+        "command": "cmake --build build --config Release -j12",
+        "group": { "kind": "build", "isDefault": true },
+        "problemMatcher": ["$gcc"]
+      },
+      {
+        "label": "Build TurboQuant (Debug)",
+        "type": "shell",
+        "command": "cmake -B build-debug -DCMAKE_BUILD_TYPE=Debug -GNinja && cmake --build build-debug -j12",
+        "problemMatcher": ["$gcc"]
+      },
+      {
+        "label": "Configure CMake",
+        "type": "shell",
+        "command": "cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release -DAVX512=ON -DCUDA_ARCH=86"
+      },
+      {
+        "label": "Run Tests",
+        "type": "shell",
+        "command": "cd build && ctest --output-on-failure -j12"
+      },
+      {
+        "label": "Run Benchmarks",
+        "type": "shell",
+        "command": "./build/benchmark --all"
+      },
+      {
+        "label": "Profile with perf",
+        "type": "shell",
+        "command": "perf record -g ./build/benchmark && perf report"
+      },
+      {
+        "label": "Check Assembly Output",
+        "type": "shell",
+        "command": "objdump -d -M intel ${file} | less"
+      },
+      {
+        "label": "CUDA Profile (nvprof)",
+        "type": "shell",
+        "command": "nvprof --analysis-metrics ./build/benchmark_cuda"
+      },
+      {
+        "label": "Memory Check (Valgrind)",
+        "type": "shell",
+        "command": "valgrind --leak-check=full --show-leak-kinds=all ./build/tests/test_all"
+      },
+      {
+        "label": "Clean Build",
+        "type": "shell",
+        "command": "rm -rf build build-debug && cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release -DAVX512=ON"
+      }
+    ]
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Debug TurboQuant",
+        "type": "lldb",
+        "request": "launch",
+        "program": "${workspaceFolder}/build/benchmark",
+        "args": [],
+        "cwd": "${workspaceFolder}",
+        "preLaunchTask": "Build TurboQuant (Debug)"
+      },
+      {
+        "name": "Debug Tests",
+        "type": "lldb",
+        "request": "launch",
+        "program": "${workspaceFolder}/build/tests/test_all",
+        "args": [],
+        "cwd": "${workspaceFolder}"
+      }
+    ]
+  }
+}

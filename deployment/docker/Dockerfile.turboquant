@@ -1,0 +1,44 @@
+FROM nvidia/cuda:12.4.0-devel-ubuntu22.04
+
+LABEL maintainer="ikharoz"
+LABEL description="TurboQuant LLM Inference Server"
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV CUDA_HOME=/usr/local/cuda
+ENV PATH="${CUDA_HOME}/bin:${PATH}"
+ENV LD_LIBRARY_PATH="${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}"
+
+# System dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential cmake ninja-build git \
+    python3 python3-pip python3-venv \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy core library
+COPY core/ /app/core/
+
+# Build C++/CUDA library
+RUN cd /app/core && \
+    cmake -B build -GNinja \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DAVX512=OFF \
+      -DCUDA_ARCH=86 && \
+    cmake --build build -j$(nproc)
+
+# Copy and install Python package
+COPY python/ /app/python/
+RUN cd /app/python && \
+    python3 -m pip install --no-cache-dir -r requirements.txt && \
+    python3 -m pip install --no-cache-dir -e .
+
+# Copy deployment
+COPY deployment/ /app/deployment/
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+CMD ["python3", "-m", "deployment.api.openai_server"]

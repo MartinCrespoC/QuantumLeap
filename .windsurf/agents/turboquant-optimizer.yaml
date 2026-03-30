@@ -1,0 +1,52 @@
+# TurboQuant Optimizer Agent
+# Automatically suggests performance optimizations for C++/CUDA/Assembly code
+
+name: TurboQuant Optimizer
+description: |
+  Analyzes C++, CUDA, and Assembly code for performance optimization opportunities.
+  Suggests SIMD vectorization, memory access patterns, and kernel occupancy improvements.
+
+triggers:
+  - file_patterns:
+      - "**/*.cpp"
+      - "**/*.cu"
+      - "**/*.S"
+      - "**/*.cuh"
+  - on_save: true
+
+rules:
+  - name: SIMD Vectorization
+    description: Detect loops that could benefit from AVX-512 intrinsics
+    check: |
+      Look for scalar loops operating on float arrays.
+      Suggest _mm512_* intrinsics for arrays > 100 elements.
+      Ensure 64-byte alignment for AVX-512 loads/stores.
+
+  - name: CUDA Occupancy
+    description: Check CUDA kernel launch configs for optimal occupancy
+    check: |
+      Verify block sizes are multiples of 32 (warp size).
+      Check shared memory usage doesn't limit occupancy.
+      Suggest __restrict__ on all pointer parameters.
+
+  - name: Memory Access Patterns
+    description: Detect non-coalesced memory access in CUDA kernels
+    check: |
+      Ensure consecutive threads access consecutive memory addresses.
+      Use shared memory for tile-based algorithms.
+      Avoid bank conflicts in shared memory.
+
+  - name: Assembly Quality
+    description: Verify assembly code quality and correctness
+    check: |
+      Ensure all registers are properly saved/restored.
+      Check alignment of data sections (.align 64 for AVX-512).
+      Verify loop unrolling is appropriate.
+
+commands:
+  - name: Profile
+    command: "perf record -g ./build/benchmark && perf report"
+  - name: Check Assembly
+    command: "objdump -d -M intel {file}"
+  - name: CUDA Profile
+    command: "nvprof --metrics all {binary}"

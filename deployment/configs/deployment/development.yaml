@@ -1,0 +1,21 @@
+# Development deployment configuration
+server:
+  host: "127.0.0.1"
+  port: 8000
+  workers: 1
+  reload: true
+  log_level: "debug"
+
+model:
+  default: "llama-3.2-3b"
+  quantization: "turboquant-int2"
+  max_context: 4096
+
+gpu:
+  device: 0
+  memory_fraction: 0.85
+  enable_profiling: true
+
+monitoring:
+  enabled: false
+  prometheus_port: 9090

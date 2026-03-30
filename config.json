@@ -1,0 +1,5 @@
+{
+  "default_model": "SmolLM2-1.7B-Instruct-Q4_K_M",
+  "gpu_layers": 99,
+  "ctx_size": 4096
+}
