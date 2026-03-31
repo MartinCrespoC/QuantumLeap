@@ -43,10 +43,33 @@ static constexpr int BLOCK_DIM = 256; // Threads per block
 
 // FP16 → FP32 conversion (device)
 __device__ __forceinline__ float fp16_to_fp32_dev(uint16_t h) {
-    // Use CUDA intrinsic for speed
-    __half hval;
-    memcpy(&hval, &h, sizeof(__half));
-    return __half2float(hval);
+    // Manual FP16 to FP32 conversion (compatible with both CUDA and HIP)
+    uint32_t sign = (h >> 15) & 0x1;
+    uint32_t exponent = (h >> 10) & 0x1F;
+    uint32_t mantissa = h & 0x3FF;
+    
+    uint32_t f32;
+    if (exponent == 0) {
+        if (mantissa == 0) {
+            f32 = sign << 31;
+        } else {
+            exponent = 1;
+            while ((mantissa & 0x400) == 0) {
+                mantissa <<= 1;
+                exponent--;
+            }
+            mantissa &= 0x3FF;
+            f32 = (sign << 31) | ((exponent + 112) << 23) | (mantissa << 13);
+        }
+    } else if (exponent == 31) {
+        f32 = (sign << 31) | 0x7F800000 | (mantissa << 13);
+    } else {
+        f32 = (sign << 31) | ((exponent + 112) << 23) | (mantissa << 13);
+    }
+    
+    float result;
+    memcpy(&result, &f32, sizeof(float));
+    return result;
 }
 
 // SiLU activation: x * sigmoid(x)
