@@ -33,6 +33,8 @@ logs/
 # IDE
 .vscode/
 .idea/
+.windsurf/
+.windsurfrules
 *.swp
 *.swo
 *~
