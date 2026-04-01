@@ -204,15 +204,15 @@ void PipelineController::release() {
     cache_.release();
 
     if (compute_stream_) {
-        GPU_STREAM_DESTROY(compute_stream_);
+        (void)GPU_STREAM_DESTROY(compute_stream_);
         compute_stream_ = nullptr;
     }
     if (expert_stream_) {
-        GPU_STREAM_DESTROY(expert_stream_);
+        (void)GPU_STREAM_DESTROY(expert_stream_);
         expert_stream_ = nullptr;
     }
     if (expert_ready_event_) {
-        GPU_EVENT_DESTROY(expert_ready_event_);
+        (void)GPU_EVENT_DESTROY(expert_ready_event_);
         expert_ready_event_ = nullptr;
     }
 
@@ -301,8 +301,8 @@ PipelineController::ExpertPointers PipelineController::process_layer(
         // Use the prefetcher's transfer stream for consistency
         for (const auto& req : miss_requests) {
 #ifdef __HIP_PLATFORM_AMD__
-            hipMemcpyAsync(req.dst_gpu, req.src_cpu, req.size_bytes,
-                           hipMemcpyHostToDevice, prefetcher_.transfer_stream());
+            (void)hipMemcpyAsync(req.dst_gpu, req.src_cpu, req.size_bytes,
+                                 hipMemcpyHostToDevice, prefetcher_.transfer_stream());
 #elif defined(__CUDACC__) || defined(EXPERTFLOW_CUDA)
             cudaMemcpyAsync(req.dst_gpu, req.src_cpu, req.size_bytes,
                             cudaMemcpyHostToDevice, prefetcher_.transfer_stream());
@@ -312,7 +312,7 @@ PipelineController::ExpertPointers PipelineController::process_layer(
         }
 
         // Must wait for transfer before expert compute
-        GPU_STREAM_SYNC(prefetcher_.transfer_stream());
+        (void)GPU_STREAM_SYNC(prefetcher_.transfer_stream());
 
         auto t_xfer_end = std::chrono::high_resolution_clock::now();
         current_profile_.expert_transfer_ms +=
@@ -342,8 +342,8 @@ void PipelineController::end_token() {
     if (!ready_) return;
 
     // Sync all streams
-    GPU_STREAM_SYNC(compute_stream_);
-    GPU_STREAM_SYNC(expert_stream_);
+    (void)GPU_STREAM_SYNC(compute_stream_);
+    (void)GPU_STREAM_SYNC(expert_stream_);
     prefetcher_.sync();
 
     // Advance LRU clock

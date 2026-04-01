@@ -16,7 +16,7 @@ namespace expertflow {
 
 // GGUF format constants
 static constexpr uint32_t GGUF_MAGIC   = 0x46554747;  // "GGUF" in little-endian
-static constexpr uint32_t GGUF_VERSION = 3;
+[[maybe_unused]] static constexpr uint32_t GGUF_VERSION = 3;
 
 // GGUF metadata value types
 enum GGUFType : uint32_t {

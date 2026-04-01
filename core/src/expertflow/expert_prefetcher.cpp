@@ -133,16 +133,16 @@ bool ExpertPrefetcher::init(const PrefetchConfig& config,
 
 void ExpertPrefetcher::release() {
     if (transfer_stream_) {
-        GPU_STREAM_SYNC(transfer_stream_);
-        GPU_STREAM_DESTROY(transfer_stream_);
+        (void)GPU_STREAM_SYNC(transfer_stream_);
+        (void)GPU_STREAM_DESTROY(transfer_stream_);
         transfer_stream_ = nullptr;
     }
     if (transfer_done_) {
-        GPU_EVENT_DESTROY(transfer_done_);
+        (void)GPU_EVENT_DESTROY(transfer_done_);
         transfer_done_ = nullptr;
     }
     if (staging_buffer_) {
-        GPU_FREE_HOST(staging_buffer_);
+        (void)GPU_FREE_HOST(staging_buffer_);
         staging_buffer_ = nullptr;
         staging_bytes_ = 0;
     }
@@ -226,9 +226,9 @@ TransferStatus ExpertPrefetcher::query_status() const {
     return TransferStatus::kInProgress;
 }
 
-void ExpertPrefetcher::sync() {
-    if (transfer_stream_) {
-        GPU_STREAM_SYNC(transfer_stream_);
+void ExpertPrefetcher::flush() {
+    if (current_status_ == TransferStatus::kInProgress) {
+        (void)GPU_STREAM_SYNC(transfer_stream_);
     }
     current_status_ = TransferStatus::kIdle;
 }
@@ -314,16 +314,16 @@ void ExpertPrefetcher::issue_transfers(const std::vector<TransferRequest>& reque
             // (We still need per-slot copies since GPU slots aren't contiguous)
             offset = 0;
             for (const auto& req : requests) {
-                GPU_MEMCPY_ASYNC(req.dst_gpu, staging_buffer_ + offset,
-                                 req.size_bytes, transfer_stream_);
+                (void)GPU_MEMCPY_ASYNC(req.dst_gpu, staging_buffer_ + offset,
+                                       req.size_bytes, transfer_stream_);
                 offset += req.size_bytes;
                 current_batch_bytes_ += req.size_bytes;
             }
         } else {
             // Staging buffer too small — fall back to direct copies
             for (const auto& req : requests) {
-                GPU_MEMCPY_ASYNC(req.dst_gpu, req.src_cpu,
-                                 req.size_bytes, transfer_stream_);
+                (void)GPU_MEMCPY_ASYNC(req.dst_gpu, req.src_cpu,
+                                       req.size_bytes, transfer_stream_);
                 current_batch_bytes_ += req.size_bytes;
             }
         }
@@ -331,14 +331,14 @@ void ExpertPrefetcher::issue_transfers(const std::vector<TransferRequest>& reque
         // Direct mmap → GPU async copy (no staging)
         // This still works but may be slower if source isn't pinned
         for (const auto& req : requests) {
-            GPU_MEMCPY_ASYNC(req.dst_gpu, req.src_cpu,
-                             req.size_bytes, transfer_stream_);
+            (void)GPU_MEMCPY_ASYNC(req.dst_gpu, req.src_cpu,
+                                   req.size_bytes, transfer_stream_);
             current_batch_bytes_ += req.size_bytes;
         }
     }
 
     // Record event to signal completion
-    GPU_EVENT_RECORD(transfer_done_, transfer_stream_);
+    (void)GPU_EVENT_RECORD(transfer_done_, transfer_stream_);
     current_status_ = TransferStatus::kInProgress;
 
     stats_.bytes_transferred += current_batch_bytes_;

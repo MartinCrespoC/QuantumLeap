@@ -361,7 +361,7 @@ MoeDispatchStats moe_dispatch_gpu(const MoeDispatchParams& params,
     }
 
     // Synchronize to get timing
-    cudaStreamSynchronize(stream);
+    (void)cudaStreamSynchronize(stream);
 
     auto t_end = std::chrono::high_resolution_clock::now();
     stats.total_ms = std::chrono::duration<double, std::milli>(t_end - t_start).count();

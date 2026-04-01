@@ -117,7 +117,7 @@ bool ExpertCache::init(const CacheConfig& config) {
 
 void ExpertCache::release() {
     if (gpu_pool_) {
-        GPU_FREE(gpu_pool_);
+        (void)GPU_FREE(gpu_pool_);
         gpu_pool_ = nullptr;
     }
     gpu_pool_bytes_ = 0;

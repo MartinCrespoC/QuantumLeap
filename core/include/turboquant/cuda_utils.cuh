@@ -102,7 +102,7 @@ namespace cuda {
 
 struct CudaDeleter {
   void operator()(void* ptr) const {
-    if (ptr) cudaFree(ptr);
+    if (ptr) (void)cudaFree(ptr);
   }
 };
 
