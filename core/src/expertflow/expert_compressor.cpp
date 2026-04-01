@@ -19,6 +19,12 @@
 #include <cstdio>
 #include <cstring>
 
+#if defined(TURBOQUANT_CUDA) || defined(__CUDACC__)
+#include <cuda_runtime.h>
+#elif defined(TURBOQUANT_HIP) || defined(__HIP_PLATFORM_AMD__)
+#include <hip/hip_runtime.h>
+#endif
+
 namespace expertflow {
 
 // ============================================================
